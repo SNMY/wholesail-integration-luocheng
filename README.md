@@ -1,6 +1,6 @@
 # Wholesail Integration
 
-A config-driven Python CLI that normalizes invoice CSV files from multiple sellers into one canonical model and generates customer-level balance reports.
+A config-driven Python CLI that normalizes invoice CSV files from multiple sellers into one canonical model and generates per-file customer balance reports.
 
 ## Table of Contents
 
@@ -23,11 +23,13 @@ A config-driven Python CLI that normalizes invoice CSV files from multiple selle
 
 Different sellers can send CSV files with different field names and formats, even when the business meaning is the same. This project solves that by mapping source-specific CSV rows into one canonical invoice model before any reporting logic is applied.
 
-The current implementation generates a grouped balances report:
+The current implementation generates one report per input CSV file:
 
-- Group first by seller
-- Group then by customer
-- Calculate `outstanding_balance` and `past_due_balance` for each customer
+- one input CSV -> one output CSV report
+- report rows are grouped by customer within that file
+- each report contains only `customer`, `outstanding_balance`, and `past_due_balance`
+
+For an input file named `data-golden-gate-produce-10.csv`, the generated report will be named `data-golden-gate-produce-10-report.csv`.
 
 ## Design Goals
 
@@ -35,7 +37,7 @@ The current implementation generates a grouped balances report:
 - Add new sellers through configuration whenever possible
 - Keep business logic independent from raw source column names
 - Continue processing when individual rows are invalid
-- Produce output that is easy to review and easy to test
+- Produce outputs that are easy to review and easy to test
 
 ## Balance Definitions
 
@@ -60,8 +62,8 @@ CSV file
 -> type conversion
 -> validation
 -> canonical invoice record
--> grouped balance aggregation
--> JSON report
+-> customer-level aggregation for that file
+-> CSV report
 ```
 
 The important design choice is that reports do not depend on raw CSV headers such as `customer`, `buyer`, `amount`, or `transAmountCents`. They only depend on the canonical model.
@@ -115,61 +117,35 @@ pip install -e .
 Place CSV files in `data/input`, then run:
 
 ```bash
-wholesail --input-dir ./data/input --config-dir ./configs/sources --output ./data/output/report.json
+wholesail --input-dir ./data/input --config-dir ./configs/sources --output-dir ./data/output
 ```
 
 You can also run it as a module:
 
 ```bash
-python -m wholesail.cli --input-dir ./data/input --config-dir ./configs/sources --output ./data/output/report.json
+python -m wholesail.cli --input-dir ./data/input --config-dir ./configs/sources --output-dir ./data/output
 ```
 
 Optional arguments:
 
 - `--as-of-date 2022-03-31`
-- `--format json`
 
 ## Output
 
-The generated report contains two main sections:
+For each input CSV file, the CLI generates one corresponding CSV report in the output directory.
 
-- `run_summary`: input discovery, resolved files, and invalid row counts
-- `balances_report`: grouped balances by seller and then by customer
+Example:
 
-Example shape:
+- input: `data/input/data-golden-gate-produce-10.csv`
+- output: `data/output/data-golden-gate-produce-10-report.csv`
 
-```json
-{
-  "as_of_date": "2022-03-31",
-  "run_summary": {
-    "source_count": 2,
-    "discovered_files": 2,
-    "resolved_files": [],
-    "unresolved_files": [],
-    "valid_record_count": 20,
-    "records_in_metrics": 17,
-    "invalid_row_count": 0
-  },
-  "balances_report": {
-    "total_outstanding_balance": "3461.18",
-    "total_past_due_balance": "2411.18",
-    "balances_by_seller": [
-      {
-        "seller_name": "golden_gate_produce",
-        "customers": [
-          {
-            "customer_name": "customer-7",
-            "invoice_count": 2,
-            "outstanding_balance": "425.00",
-            "past_due_balance": "50.00"
-          }
-        ]
-      }
-    ]
-  },
-  "invalid_rows": []
-}
+Each generated report contains exactly these columns:
+
+```text
+customer,outstanding_balance,past_due_balance
 ```
+
+A `run_summary.json` file is also written to the output directory to help with debugging and validation review.
 
 ## Design Notes
 
@@ -234,7 +210,8 @@ The current version is designed to continue processing when individual rows are 
 Current behavior:
 
 - invalid rows are excluded from metrics
-- invalid rows are captured in the `invalid_rows` section of the output
+- invalid rows are captured in `run_summary.json`
+- file-level read errors are captured in `run_summary.json`
 - missing or malformed data is handled through validation rules and config defaults where appropriate
 
 Examples of row-level validation:
@@ -245,8 +222,6 @@ Examples of row-level validation:
 - negative transaction amount
 - negative paid amount
 - negative term schedule
-
-A future production-oriented version would also add clearer file-level error handling for cases such as unreadable files, bad encodings, or malformed CSV structure.
 
 ## Extending to New CSV Sources
 
@@ -279,7 +254,8 @@ The test suite currently covers:
 - balance calculation rules
 - source resolution
 - config-driven row mapping
-- grouped seller and customer aggregation
+- customer-level report aggregation
+- run summary generation
 
 ## Future Improvements
 
@@ -288,5 +264,5 @@ The next logical improvements would be:
 - streaming row processing for large files
 - separate invalid-row and file-error output artifacts
 - stronger config validation at startup
-- additional report formats such as CSV
+- additional report formats if needed
 - more detailed logging and operational summaries

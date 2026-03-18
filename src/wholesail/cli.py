@@ -12,14 +12,14 @@ from wholesail.ingestion.csv_reader import discover_csv_files, read_csv_rows
 from wholesail.ingestion.row_mapper import map_row_to_invoice
 from wholesail.ingestion.source_resolver import resolve_source
 from wholesail.ingestion.validators import validate_invoice
-from wholesail.reporting.summary_report import build_report_summary
-from wholesail.reporting.writers import write_json_report
+from wholesail.reporting.summary_report import build_customer_balance_rows, build_run_summary
+from wholesail.reporting.writers import write_csv_report, write_json_report
 
 
 def build_parser() -> argparse.ArgumentParser:
     """Create the CLI parser for the reporting workflow."""
     parser = argparse.ArgumentParser(
-        description="Normalize provider CSV files and generate balance report summaries."
+        description="Normalize provider CSV files and generate per-file customer balance reports."
     )
     parser.add_argument(
         "--input-dir",
@@ -34,10 +34,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="Directory containing provider TOML configs.",
     )
     parser.add_argument(
-        "--output",
+        "--output-dir",
         type=Path,
-        default=Path("data/output/report.json"),
-        help="Path to the generated summary report.",
+        default=Path("data/output"),
+        help="Directory where generated CSV reports will be written.",
     )
     parser.add_argument(
         "--as-of-date",
@@ -45,13 +45,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=date(2022, 3, 31),
         help="Date used for past-due evaluation in ISO format.",
     )
-    parser.add_argument(
-        "--format",
-        choices=("json",),
-        default="json",
-        help="Output format for the generated report.",
-    )
     return parser
+
+
+def _build_report_path(output_dir: Path, csv_file: Path) -> Path:
+    """Build the output path for a single input CSV report."""
+    return output_dir / f"{csv_file.stem}-report.csv"
 
 
 def main() -> None:
@@ -60,11 +59,10 @@ def main() -> None:
     configs = load_source_configs(args.config_dir)
     csv_files = discover_csv_files(args.input_dir)
 
-    resolved_files = []
     unresolved_files = []
-    valid_records: list[InvoiceRecord] = []
     invalid_rows: list[InvalidRow] = []
-    excluded_statuses: set[str] = set()
+    generated_reports: list[dict[str, object]] = []
+    file_errors: list[dict[str, str]] = []
 
     for csv_file in csv_files:
         config = resolve_source(csv_file, configs)
@@ -72,10 +70,22 @@ def main() -> None:
             unresolved_files.append(str(csv_file))
             continue
 
-        resolved_files.append({"file": str(csv_file), "source_name": config.source_name})
-        excluded_statuses.update(status.lower() for status in config.metrics_excluded_statuses)
+        excluded_statuses = {status.lower() for status in config.metrics_excluded_statuses}
+        valid_records: list[InvoiceRecord] = []
 
-        for row_number, row in enumerate(read_csv_rows(csv_file), start=2):
+        try:
+            raw_rows = read_csv_rows(csv_file)
+        except (OSError, UnicodeDecodeError, ValueError) as exc:
+            file_errors.append(
+                {
+                    "file_name": csv_file.name,
+                    "source_name": config.source_name,
+                    "error": str(exc),
+                }
+            )
+            continue
+
+        for row_number, row in enumerate(raw_rows, start=2):
             try:
                 record = map_row_to_invoice(row, config)
             except (KeyError, TypeError, ValueError) as exc:
@@ -103,19 +113,33 @@ def main() -> None:
 
             valid_records.append(record)
 
-    report = build_report_summary(
+        report_rows = build_customer_balance_rows(
+            as_of_date=args.as_of_date,
+            records=valid_records,
+            excluded_statuses=excluded_statuses,
+        )
+        report_path = _build_report_path(args.output_dir, csv_file)
+        write_csv_report(report_path, report_rows)
+        generated_reports.append(
+            {
+                "input_file": str(csv_file),
+                "source_name": config.source_name,
+                "output_file": str(report_path),
+                "customer_count": len(report_rows),
+                "valid_record_count": len(valid_records),
+            }
+        )
+
+    summary = build_run_summary(
         as_of_date=args.as_of_date,
-        records=valid_records,
-        invalid_rows=invalid_rows,
         source_count=len(configs),
         discovered_files=len(csv_files),
-        resolved_files=resolved_files,
+        generated_reports=generated_reports,
         unresolved_files=unresolved_files,
-        excluded_statuses=excluded_statuses,
+        invalid_rows=invalid_rows,
+        file_errors=file_errors,
     )
-
-    if args.format == "json":
-        write_json_report(args.output, report)
+    write_json_report(args.output_dir / "run_summary.json", summary)
 
 
 if __name__ == "__main__":

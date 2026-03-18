@@ -1,0 +1,29 @@
+{
+  "as_of_date": "2022-03-31",
+  "run_summary": {
+    "source_count": 2,
+    "discovered_files": 2,
+    "generated_report_count": 2,
+    "generated_reports": [
+      {
+        "input_file": "data\\input\\data-golden-gate-produce-10.csv",
+        "source_name": "golden_gate_produce",
+        "output_file": "data\\output\\data-golden-gate-produce-10-report.csv",
+        "customer_count": 5,
+        "valid_record_count": 10
+      },
+      {
+        "input_file": "data\\input\\data-happy-fruits-10.csv",
+        "source_name": "happy_fruits",
+        "output_file": "data\\output\\data-happy-fruits-10-report.csv",
+        "customer_count": 5,
+        "valid_record_count": 10
+      }
+    ],
+    "unresolved_files": [],
+    "file_error_count": 0,
+    "invalid_row_count": 0
+  },
+  "file_errors": [],
+  "invalid_rows": []
+}
