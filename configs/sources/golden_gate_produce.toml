@@ -1,0 +1,60 @@
+source_name = "golden_gate_produce"
+
+[match]
+filename_patterns = ["*golden-gate-produce*.csv"]
+required_headers = [
+  "id",
+  "customer",
+  "amount",
+  "date",
+  "term_schedule",
+  "paid_amount",
+]
+
+[fields.invoice_id]
+source = "id"
+
+[fields.customer_name]
+source = "customer"
+
+[fields.trans_amount]
+source = "amount"
+transform = "decimal"
+
+[fields.trans_date]
+source = "date"
+transform = "iso_date"
+
+[fields.adjustment]
+source = "adjustment"
+transform = "decimal"
+default = "0"
+
+[fields.term_schedule_days]
+source = "term_schedule"
+transform = "integer"
+
+[fields.paid_amount]
+source = "paid_amount"
+transform = "decimal"
+default = "0"
+
+[fields.paid_at]
+source = "paid_at"
+transform = "iso_date_nullable"
+
+[fields.billing_address]
+source = "billing_address"
+
+[fields.shipping_address]
+source = "shipping_address"
+
+[fields.raw_items_json]
+source = "items"
+
+[fields.note]
+source = "note"
+
+[rules]
+status_markers = ["VOIDED"]
+metrics_excluded_statuses = ["voided"]

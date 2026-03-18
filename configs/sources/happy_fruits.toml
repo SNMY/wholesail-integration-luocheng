@@ -1,0 +1,60 @@
+source_name = "happy_fruits"
+
+[match]
+filename_patterns = ["*happy-fruits*.csv"]
+required_headers = [
+  "invoiceId",
+  "buyer",
+  "transAmountCents",
+  "transDate",
+  "paymentTerm",
+  "paidAmountCents",
+]
+
+[fields.invoice_id]
+source = "invoiceId"
+
+[fields.customer_name]
+source = "buyer"
+
+[fields.trans_amount]
+source = "transAmountCents"
+transform = "cents_to_decimal"
+
+[fields.trans_date]
+source = "transDate"
+transform = "iso_date"
+
+[fields.adjustment]
+source = "adjustmentAmountCents"
+transform = "cents_to_decimal"
+default = "0"
+
+[fields.term_schedule_days]
+source = "paymentTerm"
+transform = "integer"
+
+[fields.paid_amount]
+source = "paidAmountCents"
+transform = "cents_to_decimal"
+default = "0"
+
+[fields.paid_at]
+source = "paidAt"
+transform = "iso_date_nullable"
+
+[fields.billing_address]
+source = "billingAddress"
+
+[fields.shipping_address]
+source = "shippingAddress"
+
+[fields.raw_items_json]
+source = "lines"
+
+[fields.note]
+source = "memo"
+
+[rules]
+status_markers = ["VOIDED"]
+metrics_excluded_statuses = ["voided"]

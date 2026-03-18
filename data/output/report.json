@@ -1,0 +1,116 @@
+{
+  "as_of_date": "2022-03-31",
+  "run_summary": {
+    "source_count": 2,
+    "discovered_files": 2,
+    "resolved_files": [
+      {
+        "file": "data\\input\\data-golden-gate-produce-10.csv",
+        "source_name": "golden_gate_produce"
+      },
+      {
+        "file": "data\\input\\data-happy-fruits-10.csv",
+        "source_name": "happy_fruits"
+      }
+    ],
+    "unresolved_files": [],
+    "valid_record_count": 20,
+    "records_in_metrics": 17,
+    "invalid_row_count": 0
+  },
+  "balances_report": {
+    "total_outstanding_balance": "3461.18",
+    "total_past_due_balance": "2411.18",
+    "balances_by_seller": [
+      {
+        "seller_name": "golden_gate_produce",
+        "customer_count": 6,
+        "outstanding_balance": "1700.00",
+        "past_due_balance": "650.00",
+        "customers": [
+          {
+            "customer_name": "customer-2",
+            "invoice_count": 2,
+            "outstanding_balance": "373.00",
+            "past_due_balance": "0.00"
+          },
+          {
+            "customer_name": "customer-4",
+            "invoice_count": 1,
+            "outstanding_balance": "150.00",
+            "past_due_balance": "150.00"
+          },
+          {
+            "customer_name": "customer-6",
+            "invoice_count": 1,
+            "outstanding_balance": "450.00",
+            "past_due_balance": "450.00"
+          },
+          {
+            "customer_name": "customer-7",
+            "invoice_count": 2,
+            "outstanding_balance": "425.00",
+            "past_due_balance": "50.00"
+          },
+          {
+            "customer_name": "customer-8",
+            "invoice_count": 1,
+            "outstanding_balance": "302.00",
+            "past_due_balance": "0.00"
+          },
+          {
+            "customer_name": "customer-9",
+            "invoice_count": 1,
+            "outstanding_balance": "0.00",
+            "past_due_balance": "0.00"
+          }
+        ]
+      },
+      {
+        "seller_name": "happy_fruits",
+        "customer_count": 6,
+        "outstanding_balance": "1761.18",
+        "past_due_balance": "1761.18",
+        "customers": [
+          {
+            "customer_name": "buyer-0",
+            "invoice_count": 2,
+            "outstanding_balance": "650.00",
+            "past_due_balance": "650.00"
+          },
+          {
+            "customer_name": "buyer-2",
+            "invoice_count": 1,
+            "outstanding_balance": "94.62",
+            "past_due_balance": "94.62"
+          },
+          {
+            "customer_name": "buyer-6",
+            "invoice_count": 2,
+            "outstanding_balance": "18.64",
+            "past_due_balance": "18.64"
+          },
+          {
+            "customer_name": "buyer-7",
+            "invoice_count": 2,
+            "outstanding_balance": "850.73",
+            "past_due_balance": "850.73"
+          },
+          {
+            "customer_name": "buyer-8",
+            "invoice_count": 1,
+            "outstanding_balance": "0.00",
+            "past_due_balance": "0.00"
+          },
+          {
+            "customer_name": "buyer-9",
+            "invoice_count": 1,
+            "outstanding_balance": "147.19",
+            "past_due_balance": "147.19"
+          }
+        ]
+      }
+    ]
+  },
+  "invalid_rows": []
+}
